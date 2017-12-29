@@ -1,0 +1,6 @@
+Gorilla CSRF:
+When developing locally over HTTP, you need to pass the csrf.Secure(false) argument as HTTP won't send secure cookies and so this is required to work.
+I am setting this with an environment variable.
+
+Let's Encrypt Runtime SSL:
+https://stackoverflow.com/a/40494806/1739852
