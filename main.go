@@ -84,6 +84,11 @@ Your Friendly Mail Robot`,
 	fmt.Println("Someone contacted you! An email is on the way.")
 }
 
+func sitemapHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/xml")
+	http.ServeFile(w, r, "./asset/sitemap.xml")
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -108,6 +113,7 @@ func main() {
 	r.HandleFunc("/", homeHandler).Methods("GET")
 	r.HandleFunc("/cv", cvHandler).Methods("GET")
 	r.HandleFunc("/send", contactHandler).Methods("POST")
+	r.HandleFunc("/sitemap.xml", sitemapHandler).Methods("GET")
 	http.Handle("/", r)
 
 	if productionFlag {
