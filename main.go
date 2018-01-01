@@ -27,15 +27,7 @@ var productionFlag bool
 
 var domainName string
 
-func httpsRedirectHandler(w http.ResponseWriter, req *http.Request) {
-	// remove/add not default ports from req.Host
-	target := "https://" + req.Host + req.URL.Path
-	if len(req.URL.RawQuery) > 0 {
-		target += "?" + req.URL.RawQuery
-	}
-	log.Printf("HTTPS redirect to: %s\n", target)
-	http.Redirect(w, req, target, http.StatusPermanentRedirect)
-}
+var serverPort string
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("templates/index.html")
@@ -103,6 +95,8 @@ func main() {
 
 	domainName = os.Getenv("DOMAIN_NAME")
 
+	serverPort = fmt.Sprintf(":%v", os.Getenv("SERVER_PORT"))
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -117,8 +111,6 @@ func main() {
 	http.Handle("/", r)
 
 	if productionFlag {
-		// redirect every http request to https
-		go http.ListenAndServe(":80", http.HandlerFunc(httpsRedirectHandler))
 
 		certManager := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
@@ -128,7 +120,7 @@ func main() {
 
 		srv := &http.Server{
 			Handler: csrf.Protect([]byte(csrfToken), csrf.FieldName("_token"), csrf.Secure(productionFlag))(r),
-			Addr:    ":443",
+			Addr:    serverPort,
 			TLSConfig: &tls.Config{
 				GetCertificate: certManager.GetCertificate,
 			},
@@ -141,7 +133,7 @@ func main() {
 	} else {
 		srv := &http.Server{
 			Handler: csrf.Protect([]byte(csrfToken), csrf.FieldName("_token"), csrf.Secure(productionFlag))(r),
-			Addr:    ":80",
+			Addr:    serverPort,
 			// Good practice: enforce timeouts for servers you create!
 			WriteTimeout: 15 * time.Second,
 			ReadTimeout:  15 * time.Second,
