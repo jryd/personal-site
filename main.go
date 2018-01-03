@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"html/template"
 	"log"
@@ -13,7 +12,6 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"golang.org/x/crypto/acme/autocert"
 	mailgun "gopkg.in/mailgun/mailgun-go.v1"
 )
 
@@ -110,36 +108,14 @@ func main() {
 	r.HandleFunc("/sitemap.xml", sitemapHandler).Methods("GET")
 	http.Handle("/", r)
 
-	if productionFlag {
-
-		certManager := autocert.Manager{
-			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(domainName), //your domain here
-			Cache:      autocert.DirCache("certs"),         //folder for storing certificates
-		}
-
-		srv := &http.Server{
-			Handler: csrf.Protect([]byte(csrfToken), csrf.FieldName("_token"), csrf.Secure(productionFlag))(r),
-			Addr:    serverPort,
-			TLSConfig: &tls.Config{
-				GetCertificate: certManager.GetCertificate,
-			},
-			// Good practice: enforce timeouts for servers you create!
-			WriteTimeout: 15 * time.Second,
-			ReadTimeout:  15 * time.Second,
-		}
-
-		log.Fatal(srv.ListenAndServeTLS("", "")) //key and cert are comming from Let's Encrypt
-	} else {
-		srv := &http.Server{
-			Handler: csrf.Protect([]byte(csrfToken), csrf.FieldName("_token"), csrf.Secure(productionFlag))(r),
-			Addr:    serverPort,
-			// Good practice: enforce timeouts for servers you create!
-			WriteTimeout: 15 * time.Second,
-			ReadTimeout:  15 * time.Second,
-		}
-
-		log.Fatal(srv.ListenAndServe())
+	srv := &http.Server{
+		Handler: csrf.Protect([]byte(csrfToken), csrf.FieldName("_token"), csrf.Secure(productionFlag))(r),
+		Addr:    serverPort,
+		// Good practice: enforce timeouts for servers you create!
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
 	}
+
+	log.Fatal(srv.ListenAndServe())
 
 }
